@@ -1,0 +1,7 @@
+# For clusters running the Prometheus Operator CRDs (for example kube-prometheus-stack).
+# Not applied anywhere in CI: the CRD is not installed on the kind cluster.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - servicemonitor.yaml

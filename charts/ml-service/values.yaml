@@ -1,0 +1,62 @@
+image:
+  repository: ghcr.io/gurmeher23/ml-serving-observability
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+
+config:
+  MLFLOW_TRACKING_URI: "sqlite:////app/mlruns/mlflow.db"
+  MODEL_NAME: energy-load-model
+  MODEL_ALIAS: champion
+  # MODEL_VERSION: "1"   # pin a version to roll back
+  CAPTURE_MAX_ROWS: "5000"
+  LOG_LEVEL: INFO
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests: {cpu: 100m, memory: 384Mi}
+  limits: {cpu: "1", memory: 1Gi}
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+# AKS-style ingress. Defaults assume the AKS application routing add-on
+# (ingressClassName webapprouting.kubernetes.azure.com). Switch to "nginx" for
+# ingress-nginx. TLS secret / cert-manager issuer names are placeholders.
+# AKS-ready, not AKS-tested.
+ingress:
+  enabled: false
+  className: webapprouting.kubernetes.azure.com
+  annotations: {}
+  host: ml.example.com
+  tls:
+    enabled: true
+    secretName: ml-service-tls
+
+# Prometheus scraping: pod annotations by default, ServiceMonitor if the Operator is present.
+prometheus:
+  annotations: true
+  serviceMonitor:
+    enabled: false
+    interval: 15s
+    labels: {}
+
+driftJob:
+  enabled: true
+  schedule: "*/30 * * * *"
+  minSamples: 200
+  pushgateway: ""   # host:port, empty = report only
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault

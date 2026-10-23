@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ml-service-config
+data:
+  # The image bakes in a demo registry at /app/mlruns (see Dockerfile). In a real
+  # deployment MLFLOW_TRACKING_URI points at a shared tracking/registry server.
+  MLFLOW_TRACKING_URI: "sqlite:////app/mlruns/mlflow.db"
+  MODEL_NAME: "energy-load-model"
+  # Rollback: set MODEL_VERSION to a pinned version (for example "1") and restart the
+  # Deployment. Remove it to follow the registry alias again.
+  MODEL_ALIAS: "champion"
+  CAPTURE_MAX_ROWS: "5000"
+  LOG_LEVEL: "INFO"
+  MLFLOW_DISABLE_AGENT_HINT: "1"

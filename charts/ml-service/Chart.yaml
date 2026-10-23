@@ -1,0 +1,9 @@
+apiVersion: v2
+name: ml-service
+description: >-
+  FastAPI model-serving service with Prometheus metrics and a drift-check CronJob.
+  AKS-ready (ingress/values for AKS), NOT AKS-tested: only rendered with helm template
+  and linted in CI; the live deploy test runs the Kustomize manifests on kind.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

@@ -1,0 +1,41 @@
+{{- if .Values.driftJob.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "ml-service.fullname" . }}-drift
+  labels: {{- include "ml-service.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.driftJob.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 300
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext: {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: drift-check
+              image: {{ include "ml-service.image" . }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["python", "-m", "monitoring.drift_job"]
+              args:
+                - --reference=/app/reference/reference.csv
+                - --source=http://{{ include "ml-service.fullname" . }}:{{ .Values.service.port }}/captured
+                - --out-dir=/tmp/reports
+                - --min-samples={{ .Values.driftJob.minSamples }}
+                {{- if .Values.driftJob.pushgateway }}
+                - --pushgateway={{ .Values.driftJob.pushgateway }}
+                {{- end }}
+              resources:
+                requests: {cpu: 50m, memory: 128Mi}
+                limits: {cpu: 500m, memory: 512Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+{{- end }}

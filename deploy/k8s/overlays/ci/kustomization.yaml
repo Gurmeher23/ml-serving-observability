@@ -1,0 +1,21 @@
+# Used by the GitHub Actions kind job: single replica (the drift job reads the in-memory
+# capture of one pod) and the locally built, kind-loaded image.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+images:
+  - name: ghcr.io/gurmeher23/ml-serving-observability
+    newName: ml-serving-observability
+    newTag: ci
+patches:
+  - target: {kind: Deployment, name: ml-service}
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target: {kind: HorizontalPodAutoscaler, name: ml-service}
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1

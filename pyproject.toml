@@ -1,0 +1,38 @@
+[project]
+name = "ml-serving-observability"
+version = "0.1.0"
+description = "FastAPI model serving with MLflow registry versioning, Prometheus/Grafana monitoring and drift detection"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "scipy>=1.13",
+    "scikit-learn>=1.5",
+    "mlflow-skinny>=3.0",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "skops>=0.11",
+    "prometheus-client>=0.20",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.6", "pyyaml>=6"]
+
+[tool.setuptools]
+packages = ["service", "monitoring", "training"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning", "ignore::UserWarning"]

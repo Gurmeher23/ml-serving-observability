@@ -1,0 +1,47 @@
+# Local observability stack: service + Prometheus + Pushgateway + Grafana.
+#   docker compose up --build
+#   docker compose --profile drift run --rm drift-check     # one-off drift check
+services:
+  ml-service:
+    build: .
+    ports: ["8000:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      retries: 5
+
+  drift-check:
+    build: .
+    profiles: ["drift"]
+    depends_on: [ml-service, pushgateway]
+    command:
+      - python
+      - -m
+      - monitoring.drift_job
+      - --reference=/app/reference/reference.csv
+      - --source=http://ml-service:8000/captured
+      - --out-dir=/tmp/reports
+      - --pushgateway=pushgateway:9091
+
+  pushgateway:
+    image: prom/pushgateway:v1.9.0
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+    ports: ["9090:9090"]
+    depends_on: [ml-service]
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-admin}"
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3000:3000"]
+    depends_on: [prometheus]

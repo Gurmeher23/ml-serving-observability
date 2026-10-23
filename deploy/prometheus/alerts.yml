@@ -1,0 +1,25 @@
+groups:
+  - name: ml-service
+    rules:
+      - alert: MlServiceHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{path="/predict",status=~"5.."}[5m]))
+            / clamp_min(sum(rate(http_requests_total{path="/predict"}[5m])), 1e-9) > 0.01
+        for: 5m
+        labels: {severity: page}
+        annotations:
+          summary: "More than 1% of /predict requests are failing"
+      - alert: MlServiceSlowPredict
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_request_duration_seconds_bucket{path="/predict"}[5m]))) > 0.25
+        for: 10m
+        labels: {severity: ticket}
+        annotations:
+          summary: "p95 /predict latency above the 250 ms objective"
+      - alert: MlModelDriftDetected
+        expr: model_dataset_drift == 1
+        for: 1m
+        labels: {severity: ticket}
+        annotations:
+          summary: "Input drift detected by the drift job: review and consider retraining"
